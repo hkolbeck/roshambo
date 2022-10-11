@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ro Sham Bo</title>
+    <style>
+        body {
+            margin: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: aqua;
+            display: grid;
+            grid-template-areas: "r p s"
+                                 "b b b";
+        }
+
+        canvas {
+            border: 3px solid black;
+            place-self: center;
+            grid-area: b;
+        }
+
+        .rock-score-board {
+            place-self: center;
+            grid-area: r;
+        }
+
+        .paper-score-board {
+            place-self: center;
+            grid-area: p;
+        }
+
+        .scissors-score-board {
+            place-self: center;
+            grid-area: s;
+        }
+
+    </style>
+</head>
+<body>
+<canvas id="c" height="600" width="600"></canvas>
+<h1 class="rock-score-board">🪨<span id="rock-score"></span></h1>
+<h1 class="paper-score-board">📜<span id="paper-score"></span></h1>
+<h1 class="scissors-score-board">✂️<span id="scissors-score"></span></h1>
+</body>
+<script>
+    const forceDirections = {
+        "🪨": {
+            "🪨": 0.1,
+            "✂️": -1,
+            "📜": 1
+        },
+        "✂️": {
+            "🪨": 1,
+            "✂️": 0.1,
+            "📜": -1
+        },
+        "📜": {
+            "🪨": -1,
+            "✂️": 1,
+            "📜": 0.1
+        }
+    }
+    const forceMult = 5
+    const maxVelocity = 3
+
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d")
+    ctx.font = "40px Twemoji Mozilla,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji,EmojiOne Color,Android Emoji,sans-serif;"
+
+    const rockScore = document.getElementById("rock-score")
+    const paperScore = document.getElementById("paper-score")
+    const scissorsScore = document.getElementById("scissors-score")
+
+    function init(players) {
+        const arr = new Array(players)
+
+        function randPlayer() {
+            const rand = Math.random()
+            if (rand < 0.33333333) {
+                return "🪨"
+            } else if (rand < 0.66666666) {
+                return "📜"
+            } else {
+                return "✂️"
+            }
+        }
+        
+        for (let i = 0; i < players; i++) {
+            arr[i] = {
+                xPos: Math.random() * canvas.width,
+                yPos: Math.random() * canvas.height,
+                xVelocity: Math.random() * 2 - 1,
+                yVelocity: Math.random() * 2 - 1,
+                player: randPlayer()
+            }
+        }
+        
+        return arr
+    }
+
+    function cap(n, max) {
+        if (n > max) {
+            return max
+        } else if (n < -max) {
+            return -max
+        } else {
+            return n
+        }
+    }
+
+    function interaction(a, b) {
+        let forceDirection = forceDirections[a.player][b.player];
+
+        const xDist = a.xPos - b.xPos
+        const yDist = a.yPos - b.yPos
+        const distSquared = (xDist * xDist) + (yDist * yDist)
+        if (forceDirection === 1 && distSquared < 64) {
+            a.player = b.player
+        }
+
+        if (xDist !== 0) {
+            a.xVelocity += forceDirection * forceMult * cap(100.0 / (xDist * distSquared), maxVelocity)
+        }
+
+        if (yDist !== 0) {
+            a.yVelocity += forceDirection * forceMult * cap(100.0 / (yDist * distSquared), maxVelocity)
+        }
+    }
+    
+    function step(players) {
+        for (let actedUpon of players) {
+            for (let acts of players) {
+                interaction(actedUpon, acts)
+            }
+        }
+
+        let scores = {
+            "🪨": 0,
+            "✂️": 0,
+            "📜": 0
+        }
+
+        ctx.fillStyle = "indigo"
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        for (let player of players) {
+            player.xVelocity = cap(player.xVelocity, maxVelocity)
+            player.xPos += player.xVelocity
+            if (player.xPos > canvas.width - 10) {
+                player.xPos = canvas.width - 10
+                player.xVelocity = -player.xVelocity
+            } else if (player.xPos < 0) {
+                player.xPos = 0
+                player.xVelocity = -player.xVelocity
+            }
+
+            player.yVelocity = cap(player.yVelocity, maxVelocity)
+            player.yPos += player.yVelocity
+            if (player.yPos > canvas.height) {
+                player.yPos = canvas.height
+                player.yVelocity = -player.yVelocity
+            } else if (player.yPos < 10) {
+                player.yPos = 10
+                player.yVelocity = -player.yVelocity
+            }
+
+            scores[player.player]++
+            ctx.fillText(player.player, player.xPos, player.yPos)
+        }
+
+        rockScore.innerText = scores["🪨"]
+        paperScore.innerText = scores["📜"]
+        scissorsScore.innerText = scores["✂️"]
+    }
+
+    const players = init(100)
+    setInterval(() => step(players), 50)
+</script>
+</html>
