@@ -11,7 +11,8 @@
             background-color: aqua;
             display: grid;
             grid-template-areas: "r p s"
-                                 "b b b";
+                                 "b b b"
+                                 "w w w";
         }
 
         canvas {
@@ -35,6 +36,10 @@
             grid-area: s;
         }
 
+        #winner {
+            place-self: center;
+            grid-area: w;
+        }
     </style>
 </head>
 <body>
@@ -42,6 +47,7 @@
 <h1 class="rock-score-board">🪨<span id="rock-score"></span></h1>
 <h1 class="paper-score-board">📜<span id="paper-score"></span></h1>
 <h1 class="scissors-score-board">✂️<span id="scissors-score"></span></h1>
+<h1 id="winner"></h1>
 </body>
 <script>
     const forceDirections = {
@@ -63,6 +69,7 @@
     }
     const forceMult = 5
     const maxVelocity = 3
+    const playerCount = 100
 
     const canvas = document.getElementById("c");
     const ctx = canvas.getContext("2d")
@@ -71,6 +78,12 @@
     const rockScore = document.getElementById("rock-score")
     const paperScore = document.getElementById("paper-score")
     const scissorsScore = document.getElementById("scissors-score")
+
+    const winner = document.getElementById("winner")
+
+    const stepsToRestart = 100
+    let restartIn = stepsToRestart
+    let players = init(playerCount)
 
     function init(players) {
         const arr = new Array(players)
@@ -128,7 +141,13 @@
         }
     }
     
-    function step(players) {
+    function step() {
+        if (restartIn <= 0) {
+            players = init(playerCount)
+            restartIn = stepsToRestart
+            winner.innerText = " "
+        }
+
         for (let actedUpon of players) {
             for (let acts of players) {
                 interaction(actedUpon, acts)
@@ -171,9 +190,19 @@
         rockScore.innerText = scores["🪨"]
         paperScore.innerText = scores["📜"]
         scissorsScore.innerText = scores["✂️"]
+
+        if (scores["🪨"] === playerCount) {
+            restartIn--
+            winner.innerText = "ROCK WINS"
+        } else if (scores["📜"] === playerCount) {
+            restartIn--
+            winner.innerText = "PAPER WINS"
+        } else if (scores["✂️"] === playerCount) {
+            restartIn--
+            winner.innerText = "SCISSORS WIN"
+        }
     }
 
-    const players = init(100)
     setInterval(() => step(players), 50)
 </script>
 </html>
