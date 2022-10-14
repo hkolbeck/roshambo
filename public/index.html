@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ro Sham Bo</title>
+    <style>
+      body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: aqua;
+        display: grid;
+        grid-template-areas:
+          ". r p s ."
+          ". b b b a"
+          ". w w w .";
+      }
+
+      canvas {
+        border: 3px solid black;
+        place-self: center;
+        grid-area: b;
+      }
+
+      .rock-score-board {
+        place-self: center;
+        grid-area: r;
+      }
+
+      .paper-score-board {
+        place-self: center;
+        grid-area: p;
+      }
+
+      .scissors-score-board {
+        place-self: center;
+        grid-area: s;
+      }
+
+      #winner {
+        place-self: center;
+        grid-area: w;
+      }
+      
+      #all-time-scoreboard {
+        place-self: center;
+        grid-area: a
+      }
+    </style>
+    <script src="game.js"></script>
+  </head>
+  <body>
+    <canvas id="c" height="600" width="600"></canvas>
+    <h1 class="rock-score-board">🪨<span id="rock-score"></span></h1>
+    <h1 class="paper-score-board">📜<span id="paper-score"></span></h1>
+    <h1 class="scissors-score-board">✂️<span id="scissors-score"></span></h1>
+    <h2 id="winner"></h2>
+    <h2 id="all-time-scoreboard"></h2>
+  </body>
+  <script>
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d");
+    ctx.font =
+      "40px Twemoji Mozilla,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji,EmojiOne Color,Android Emoji,sans-serif;";
+
+    const rockScore = document.getElementById("rock-score");
+    const paperScore = document.getElementById("paper-score");
+    const scissorsScore = document.getElementById("scissors-score");
+
+    const allTimeDiv = document.getElementById("all-time-scoreboard");
+
+    const winner = document.getElementById("winner");
+
+    fetchState().then((state) => {
+      players = state.players
+      dispAllTime(state.all_time)
+      setInterval(() => clientStep(), 50);
+    });
+    async function fetchState() {
+      const resp = await fetch("https://rosham.glitch.me/state");
+      if (resp.ok) {
+        return await resp.json();
+      } else {
+        console.log(`State fetch failed: ${resp.status}`);
+        return {
+          players: [],
+          all_time: {}
+        }
+      }
+    }
+
+    function dispAllTime(allTime) {
+      allTimeDiv.innerText = `All Time:\n🪨: ${allTime["🪨"]}\n📜: ${allTime["📜"]}\n✂️: ${allTime["✂️"]}`;
+    }
+
+    async function clientStep() {
+      if (restartIn <= 0) {
+        const state = await fetchState();
+        players = state.players
+        dispAllTime(state.all_time)
+        
+        restartIn = stepsToRestart;
+        winner.innerText = " ";
+        return;
+      }
+
+      ctx.fillStyle = "indigo";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const scores = step();
+      for (let player of players) {
+        ctx.fillText(player.player, player.xPos, player.yPos);
+      }
+
+      rockScore.innerText = scores["🪨"];
+      paperScore.innerText = scores["📜"];
+      scissorsScore.innerText = scores["✂️"];
+
+      if (scores["🪨"] === playerCount) {
+        restartIn--;
+        winner.innerText = "ROCK WINS";
+      } else if (scores["📜"] === playerCount) {
+        restartIn--;
+        winner.innerText = "PAPER WINS";
+      } else if (scores["✂️"] === playerCount) {
+        restartIn--;
+        winner.innerText = "SCISSORS WIN";
+      }
+    }
+  </script>
+</html>
